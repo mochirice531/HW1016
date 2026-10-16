@@ -1,17 +1,18 @@
-<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>流體毛玻璃 BMI 計算機</title>
+    <title>深色流體毛玻璃 BMI 計算機</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;600;800&family=Poppins:wght@400;600;800&display=swap');
 
         :root {
-            --bg-dark: #090a10;
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.14);
-            --glass-highlight: rgba(255, 255, 255, 0.28);
+            --bg-dark: #05060a;
+            /* 加深後的燻黑毛玻璃配色 */
+            --glass-bg: rgba(10, 12, 20, 0.72);
+            --glass-sub-bg: rgba(5, 7, 12, 0.55);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-highlight: rgba(255, 255, 255, 0.22);
             --accent-color: #10b981;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
@@ -46,7 +47,7 @@
             z-index: 0;
             filter: url('#liquid-goo');
             overflow: hidden;
-            opacity: 0.85;
+            opacity: 0.75;
         }
 
         .blob {
@@ -60,7 +61,7 @@
         .blob-1 {
             width: 420px;
             height: 420px;
-            background: radial-gradient(circle, #6366f1, #a855f7);
+            background: radial-gradient(circle, #4f46e5, #9333ea);
             top: 10%;
             left: 20%;
             animation: morph-move-1 16s infinite alternate ease-in-out;
@@ -69,7 +70,7 @@
         .blob-2 {
             width: 360px;
             height: 360px;
-            background: radial-gradient(circle, #3b82f6, #06b6d4);
+            background: radial-gradient(circle, #2563eb, #0891b2);
             bottom: 12%;
             right: 20%;
             animation: morph-move-2 20s infinite alternate ease-in-out;
@@ -94,7 +95,7 @@
             left: 0;
             transform: translate(-50%, -50%);
             pointer-events: none;
-            opacity: 0.7;
+            opacity: 0.65;
             transition: width 0.3s, height 0.3s, background 0.8s ease;
         }
 
@@ -115,32 +116,32 @@
             100% { transform: translate(120px, 100px) scale(1.3); }
         }
 
-        /* 細微噪點紋理層，增加真實毛玻璃顆粒感 */
+        /* 細微噪點紋理層 */
         .noise-overlay {
             position: fixed;
             inset: 0;
             z-index: 1;
             pointer-events: none;
-            opacity: 0.035;
+            opacity: 0.04;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
 
-        /* ================= 液態毛玻璃主卡片 ================= */
+        /* ================= 深色燻黑毛玻璃主卡片 ================= */
         .glass-card {
             position: relative;
             z-index: 2;
-            width: 440px;
+            width: 450px;
             max-width: 92vw;
             padding: 36px 32px;
             border-radius: 32px;
             background: var(--glass-bg);
-            backdrop-filter: blur(28px) saturate(190%);
-            -webkit-backdrop-filter: blur(28px) saturate(190%);
+            backdrop-filter: blur(36px) saturate(180%);
+            -webkit-backdrop-filter: blur(36px) saturate(180%);
             border: 1px solid var(--glass-border);
             box-shadow: 
-                0 30px 60px -12px rgba(0, 0, 0, 0.65),
-                inset 0 1px 2px var(--glass-highlight),
-                inset 0 -1px 1px rgba(255, 255, 255, 0.04);
+                0 35px 75px -10px rgba(0, 0, 0, 0.85),
+                inset 0 1px 1.5px var(--glass-highlight),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.6);
             transform-style: preserve-3d;
             transition: transform 0.12s ease-out, border-color 0.5s ease;
             overflow: hidden;
@@ -151,8 +152,8 @@
             position: absolute;
             inset: 0;
             background: radial-gradient(
-                500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-                rgba(255, 255, 255, 0.14),
+                480px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+                rgba(255, 255, 255, 0.08),
                 transparent 45%
             );
             pointer-events: none;
@@ -169,7 +170,7 @@
             font-size: 1.65rem;
             font-weight: 800;
             letter-spacing: 1px;
-            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -184,9 +185,9 @@
         /* ================= 液態圓環儀表板 ================= */
         .gauge-section {
             position: relative;
-            width: 210px;
-            height: 210px;
-            margin: 0 auto 28px;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 26px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -205,7 +206,7 @@
 
         .gauge-track {
             fill: none;
-            stroke: rgba(255, 255, 255, 0.07);
+            stroke: rgba(0, 0, 0, 0.45);
             stroke-width: 14;
         }
 
@@ -214,7 +215,7 @@
             stroke: var(--accent-color);
             stroke-width: 14;
             stroke-linecap: round;
-            stroke-dasharray: 534; /* 2 * PI * 85 */
+            stroke-dasharray: 534;
             stroke-dashoffset: 534;
             filter: drop-shadow(0 0 12px var(--accent-color));
             transition: stroke-dashoffset 0.7s cubic-bezier(0.22, 1, 0.36, 1), stroke 0.6s ease, filter 0.6s ease;
@@ -230,7 +231,7 @@
             font-weight: 800;
             line-height: 1;
             letter-spacing: -1px;
-            text-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            text-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
             transition: color 0.5s ease;
         }
 
@@ -241,59 +242,93 @@
             border-radius: 99px;
             font-size: 0.85rem;
             font-weight: 600;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.14);
             backdrop-filter: blur(8px);
             color: var(--accent-color);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
             transition: all 0.5s ease;
         }
 
-        /* ================= 滑桿控制區 ================= */
+        /* ================= 滑桿與文字輸入控制區 ================= */
         .controls {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 18px;
             transform: translateZ(25px);
         }
 
         .control-box {
-            background: rgba(255, 255, 255, 0.03);
+            background: var(--glass-sub-bg);
             border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
             padding: 16px 20px;
             border-radius: 20px;
-            transition: background 0.3s, border-color 0.3s, transform 0.2s;
+            transition: background 0.3s, border-color 0.3s;
         }
 
-        .control-box:hover {
-            background: rgba(255, 255, 255, 0.06);
+        .control-box:hover,
+        .control-box:focus-within {
+            background: rgba(8, 11, 18, 0.7);
             border-color: rgba(255, 255, 255, 0.18);
         }
 
         .label-row {
             display: flex;
             justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 12px;
+            align-items: center;
+            margin-bottom: 14px;
         }
 
         .label-title {
-            font-size: 0.9rem;
+            font-size: 0.92rem;
             color: var(--text-muted);
             font-weight: 500;
         }
 
-        .label-number {
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: #fff;
+        /* 文字輸入框膠囊容器 */
+        .input-wrapper {
+            display: flex;
+            align-items: baseline;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 12px;
+            padding: 5px 12px;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
         }
 
-        .label-number small {
+        .input-wrapper:focus-within {
+            background: rgba(0, 0, 0, 0.75);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 14px rgba(255, 255, 255, 0.06), inset 0 2px 5px rgba(0, 0, 0, 0.7);
+        }
+
+        .glass-input {
+            width: 68px;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #ffffff;
+            font-size: 1.25rem;
+            font-weight: 700;
+            text-align: right;
+            user-select: text;
+            -moz-appearance: textfield;
+        }
+
+        /* 隱藏預設的上下箭頭按鈕，保持流體玻璃美感 */
+        .glass-input::-webkit-outer-spin-button,
+        .glass-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .unit-text {
             font-size: 0.8rem;
             color: var(--text-muted);
-            font-weight: 400;
-            margin-left: 3px;
+            font-weight: 500;
+            margin-left: 6px;
         }
 
         /* 客製化流體滑桿 */
@@ -303,7 +338,7 @@
             width: 100%;
             height: 8px;
             border-radius: 99px;
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.1);
             outline: none;
             position: relative;
             cursor: pointer;
@@ -312,8 +347,8 @@
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
             background: #ffffff;
             border: 4px solid var(--accent-color);
@@ -336,8 +371,8 @@
             margin-top: 22px;
             padding: 14px 18px;
             border-radius: 18px;
-            background: rgba(0, 0, 0, 0.25);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -362,7 +397,7 @@
 </head>
 <body>
 
-    <!-- SVG 液態融合濾鏡 (Gooey Effect 核心) -->
+    <!-- SVG 液態融合濾鏡 -->
     <svg class="svg-defs">
         <defs>
             <filter id="liquid-goo">
@@ -388,13 +423,13 @@
     <!-- 玻璃噪點質感層 -->
     <div class="noise-overlay"></div>
 
-    <!-- 毛玻璃主體卡片 -->
+    <!-- 深色毛玻璃主體卡片 -->
     <main class="glass-card" id="glass-card">
         <div class="glass-glare"></div>
 
         <header class="header">
             <h1>LIQUID BMI</h1>
-            <p>流體毛玻璃健康指標分析</p>
+            <p>深色燻黑流體毛玻璃・健康指標分析</p>
         </header>
 
         <!-- 動態圓環儀表板 -->
@@ -409,20 +444,28 @@
             </div>
         </section>
 
-        <!-- 互動滑桿控制 -->
+        <!-- 互動滑桿 + 文字輸入欄控制區 -->
         <section class="controls">
+            <!-- 身高區塊 -->
             <div class="control-box">
                 <div class="label-row">
-                    <span class="label-title">身高 Height</span>
-                    <span class="label-number"><span id="height-text">170</span><small>cm</small></span>
+                    <label class="label-title" for="height-input">身高 Height</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="height-input" class="glass-input" value="170" min="100" max="250" step="0.5">
+                        <span class="unit-text">cm</span>
+                    </div>
                 </div>
                 <input type="range" id="height-slider" min="120" max="220" value="170" step="0.5">
             </div>
 
+            <!-- 體重區塊 -->
             <div class="control-box">
                 <div class="label-row">
-                    <span class="label-title">體重 Weight</span>
-                    <span class="label-number"><span id="weight-text">63.5</span><small>kg</small></span>
+                    <label class="label-title" for="weight-input">體重 Weight</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="weight-input" class="glass-input" value="63.5" min="20" max="250" step="0.5">
+                        <span class="unit-text">kg</span>
+                    </div>
                 </div>
                 <input type="range" id="weight-slider" min="30" max="160" value="63.5" step="0.5">
             </div>
@@ -438,8 +481,8 @@
     <script>
         const heightSlider = document.getElementById('height-slider');
         const weightSlider = document.getElementById('weight-slider');
-        const heightText = document.getElementById('height-text');
-        const weightText = document.getElementById('weight-text');
+        const heightInput = document.getElementById('height-input');
+        const weightInput = document.getElementById('weight-input');
         const bmiValueEl = document.getElementById('bmi-value');
         const bmiStatusEl = document.getElementById('bmi-status');
         const idealWeightEl = document.getElementById('ideal-weight');
@@ -450,12 +493,12 @@
 
         // 台灣衛福部國健署成人 BMI 標準與對應主題色
         const categories = [
-            { max: 18.5, label: '體重過輕', color: '#38bdf8' }, // 冰晶藍
-            { max: 24.0, label: '理想體態', color: '#10b981' }, // 翡翠綠
-            { max: 27.0, label: '體重過重', color: '#f59e0b' }, // 琥珀黃
-            { max: 30.0, label: '輕度肥胖', color: '#f97316' }, // 珊瑚橘
-            { max: 35.0, label: '中度肥胖', color: '#ef4444' }, // 緋紅
-            { max: Infinity, label: '重度肥胖', color: '#ec4899' } // 霓虹紫紅
+            { max: 18.5, label: '體重過輕', color: '#38bdf8' },
+            { max: 24.0, label: '理想體態', color: '#10b981' },
+            { max: 27.0, label: '體重過重', color: '#f59e0b' },
+            { max: 30.0, label: '輕度肥胖', color: '#f97316' },
+            { max: 35.0, label: '中度肥胖', color: '#ef4444' },
+            { max: Infinity, label: '重度肥胖', color: '#ec4899' }
         ];
 
         let displayedBMI = 22.0;
@@ -479,18 +522,14 @@
         function updateSliderTrack(slider, color) {
             const min = parseFloat(slider.min);
             const max = parseFloat(slider.max);
-            const val = parseFloat(slider.value);
+            const val = Math.min(Math.max(parseFloat(slider.value) || min, min), max);
             const percentage = ((val - min) / (max - min)) * 100;
-            slider.style.background = `linear-gradient(90deg, ${color} ${percentage}%, rgba(255, 255, 255, 0.12) ${percentage}%)`;
+            slider.style.background = `linear-gradient(90deg, ${color} ${percentage}%, rgba(255, 255, 255, 0.1) ${percentage}%)`;
         }
 
         // 核心計算與視覺狀態更新
-        function updateBMI() {
-            const h = parseFloat(heightSlider.value);
-            const w = parseFloat(weightSlider.value);
-
-            heightText.textContent = h;
-            weightText.textContent = w;
+        function calculateAndRender(h, w) {
+            if (isNaN(h) || isNaN(w) || h <= 50 || w <= 10) return;
 
             const hMeters = h / 100;
             targetBMI = w / (hMeters * hMeters);
@@ -505,7 +544,7 @@
             bmiStatusEl.textContent = category.label;
             rootStyle.setProperty('--accent-color', category.color);
 
-            // 更新圓環進度條 (將 BMI 10~40 映射至圓周長 534)
+            // 更新圓環進度條
             const circumference = 534;
             const normalized = Math.min(Math.max((targetBMI - 10) / 30, 0.04), 1);
             gaugeFill.style.strokeDashoffset = circumference - (normalized * circumference);
@@ -518,8 +557,48 @@
             animateNumber();
         }
 
-        heightSlider.addEventListener('input', updateBMI);
-        weightSlider.addEventListener('input', updateBMI);
+        // 1. 當拉動滑桿時 -> 同步更新文字框與 BMI
+        heightSlider.addEventListener('input', () => {
+            heightInput.value = heightSlider.value;
+            calculateAndRender(parseFloat(heightSlider.value), parseFloat(weightInput.value));
+        });
+
+        weightSlider.addEventListener('input', () => {
+            weightInput.value = weightSlider.value;
+            calculateAndRender(parseFloat(heightInput.value), parseFloat(weightSlider.value));
+        });
+
+        // 2. 當在文字框打字時 -> 同步更新滑桿位置與 BMI
+        heightInput.addEventListener('input', () => {
+            const val = parseFloat(heightInput.value);
+            if (!isNaN(val)) {
+                heightSlider.value = Math.min(Math.max(val, parseFloat(heightSlider.min)), parseFloat(heightSlider.max));
+                calculateAndRender(val, parseFloat(weightInput.value));
+            }
+        });
+
+        weightInput.addEventListener('input', () => {
+            const val = parseFloat(weightInput.value);
+            if (!isNaN(val)) {
+                weightSlider.value = Math.min(Math.max(val, parseFloat(weightSlider.min)), parseFloat(weightSlider.max));
+                calculateAndRender(parseFloat(heightInput.value), val);
+            }
+        });
+
+        // 3. 當文字框失去焦點 (blur) 時 -> 自動修正超出合理範圍的數值
+        function clampInputOnBlur(inputEl, sliderEl, minVal, maxVal, defaultVal) {
+            inputEl.addEventListener('blur', () => {
+                let val = parseFloat(inputEl.value);
+                if (isNaN(val)) val = defaultVal;
+                val = Math.min(Math.max(val, minVal), maxVal);
+                inputEl.value = val;
+                sliderEl.value = Math.min(Math.max(val, parseFloat(sliderEl.min)), parseFloat(sliderEl.max));
+                calculateAndRender(parseFloat(heightInput.value), parseFloat(weightInput.value));
+            });
+        }
+
+        clampInputOnBlur(heightInput, heightSlider, 100, 250, 170);
+        clampInputOnBlur(weightInput, weightSlider, 20, 250, 63.5);
 
         // ================= 3D 視差傾斜 & 液態游標追蹤 =================
         let mouseX = window.innerWidth / 2;
@@ -531,7 +610,6 @@
             mouseX = e.clientX;
             mouseY = e.clientY;
 
-            // 計算卡片表面反光與 3D 傾斜角度
             const rect = glassCard.getBoundingClientRect();
             const cardX = e.clientX - rect.left;
             const cardY = e.clientY - rect.top;
@@ -539,11 +617,14 @@
             glassCard.style.setProperty('--mouse-x', `${cardX}px`);
             glassCard.style.setProperty('--mouse-y', `${cardY}px`);
 
-            // 若滑鼠在卡片附近，觸發平滑 3D 視差傾斜
+            // 當使用者正在輸入文字時，減緩傾斜幅度以利閱讀與操作
+            const isTyping = document.activeElement === heightInput || document.activeElement === weightInput;
+            const tiltFactor = isTyping ? 60 : 28;
+
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
-            const deltaX = (e.clientX - centerX) / 28;
-            const deltaY = (centerY - e.clientY) / 28;
+            const deltaX = (e.clientX - centerX) / tiltFactor;
+            const deltaY = (centerY - e.clientY) / tiltFactor;
 
             const maxTilt = 10;
             const rotateX = Math.max(Math.min(deltaY, maxTilt), -maxTilt);
@@ -556,7 +637,6 @@
             glassCard.style.transform = `rotateX(0deg) rotateY(0deg)`;
         });
 
-        // 讓游標液態球具備物理慣性延遲跟隨
         function renderCursorBlob() {
             blobX += (mouseX - blobX) * 0.08;
             blobY += (mouseY - blobY) * 0.08;
@@ -565,7 +645,7 @@
         }
 
         // 初始化執行
-        updateBMI();
+        calculateAndRender(170, 63.5);
         renderCursorBlob();
     </script>
 </body>
