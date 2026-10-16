@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>流體毛玻璃 BMI 計算機</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;600;800&family=Poppins:wght@400;600;800&display=swap');
+
+        :root {
+            --bg-dark: #090a10;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.14);
+            --glass-highlight: rgba(255, 255, 255, 0.28);
+            --accent-color: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', 'Noto Sans TC', sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            perspective: 1200px;
+        }
+
+        /* ================= 液態流體背景層 (SVG Gooey Filter) ================= */
+        .liquid-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            filter: url('#liquid-goo');
+            overflow: hidden;
+            opacity: 0.85;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(25px);
+            transition: background 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+            mix-blend-mode: screen;
+        }
+
+        .blob-1 {
+            width: 420px;
+            height: 420px;
+            background: radial-gradient(circle, #6366f1, #a855f7);
+            top: 10%;
+            left: 20%;
+            animation: morph-move-1 16s infinite alternate ease-in-out;
+        }
+
+        .blob-2 {
+            width: 360px;
+            height: 360px;
+            background: radial-gradient(circle, #3b82f6, #06b6d4);
+            bottom: 12%;
+            right: 20%;
+            animation: morph-move-2 20s infinite alternate ease-in-out;
+        }
+
+        .blob-3 {
+            width: 300px;
+            height: 300px;
+            background: var(--accent-color);
+            top: 40%;
+            left: 45%;
+            animation: morph-move-3 14s infinite alternate ease-in-out;
+        }
+
+        /* 跟隨滑鼠的液態光球 */
+        .cursor-blob {
+            width: 220px;
+            height: 220px;
+            background: var(--accent-color);
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            opacity: 0.7;
+            transition: width 0.3s, height 0.3s, background 0.8s ease;
+        }
+
+        @keyframes morph-move-1 {
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+            50% { transform: translate(180px, 90px) scale(1.2) rotate(90deg); border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%; }
+            100% { transform: translate(-80px, 160px) scale(0.9) rotate(180deg); border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+        }
+
+        @keyframes morph-move-2 {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(-160px, -110px) scale(1.25); }
+            100% { transform: translate(110px, -150px) scale(0.85); }
+        }
+
+        @keyframes morph-move-3 {
+            0% { transform: translate(-100px, -60px) scale(0.9); }
+            100% { transform: translate(120px, 100px) scale(1.3); }
+        }
+
+        /* 細微噪點紋理層，增加真實毛玻璃顆粒感 */
+        .noise-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.035;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* ================= 液態毛玻璃主卡片 ================= */
+        .glass-card {
+            position: relative;
+            z-index: 2;
+            width: 440px;
+            max-width: 92vw;
+            padding: 36px 32px;
+            border-radius: 32px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(28px) saturate(190%);
+            -webkit-backdrop-filter: blur(28px) saturate(190%);
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 30px 60px -12px rgba(0, 0, 0, 0.65),
+                inset 0 1px 2px var(--glass-highlight),
+                inset 0 -1px 1px rgba(255, 255, 255, 0.04);
+            transform-style: preserve-3d;
+            transition: transform 0.12s ease-out, border-color 0.5s ease;
+            overflow: hidden;
+        }
+
+        /* 卡片表面動態折射光暈 */
+        .glass-glare {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(
+                500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+                rgba(255, 255, 255, 0.14),
+                transparent 45%
+            );
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+            transform: translateZ(30px);
+        }
+
+        .header h1 {
+            font-size: 1.65rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ================= 液態圓環儀表板 ================= */
+        .gauge-section {
+            position: relative;
+            width: 210px;
+            height: 210px;
+            margin: 0 auto 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transform: translateZ(45px);
+        }
+
+        .gauge-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+            overflow: visible;
+        }
+
+        .gauge-track {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.07);
+            stroke-width: 14;
+        }
+
+        .gauge-fill {
+            fill: none;
+            stroke: var(--accent-color);
+            stroke-width: 14;
+            stroke-linecap: round;
+            stroke-dasharray: 534; /* 2 * PI * 85 */
+            stroke-dashoffset: 534;
+            filter: drop-shadow(0 0 12px var(--accent-color));
+            transition: stroke-dashoffset 0.7s cubic-bezier(0.22, 1, 0.36, 1), stroke 0.6s ease, filter 0.6s ease;
+        }
+
+        .bmi-display {
+            text-align: center;
+            z-index: 2;
+        }
+
+        .bmi-value {
+            font-size: 3.1rem;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -1px;
+            text-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            transition: color 0.5s ease;
+        }
+
+        .bmi-badge {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 5px 16px;
+            border-radius: 99px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            color: var(--accent-color);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.5s ease;
+        }
+
+        /* ================= 滑桿控制區 ================= */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            transform: translateZ(25px);
+        }
+
+        .control-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 16px 20px;
+            border-radius: 20px;
+            transition: background 0.3s, border-color 0.3s, transform 0.2s;
+        }
+
+        .control-box:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 12px;
+        }
+
+        .label-title {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .label-number {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .label-number small {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-left: 3px;
+        }
+
+        /* 客製化流體滑桿 */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, 0.12);
+            outline: none;
+            position: relative;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 4px solid var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-color), inset 0 0 4px rgba(0,0,0,0.3);
+            cursor: grab;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.5s ease, box-shadow 0.5s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            transform: scale(0.95);
+        }
+
+        /* ================= 底部健康資訊區 ================= */
+        .info-panel {
+            margin-top: 22px;
+            padding: 14px 18px;
+            border-radius: 18px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            transform: translateZ(20px);
+        }
+
+        .info-panel span.highlight {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* 隱藏 SVG 濾鏡定義 */
+        .svg-defs {
+            position: absolute;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SVG 液態融合濾鏡 (Gooey Effect 核心) -->
+    <svg class="svg-defs">
+        <defs>
+            <filter id="liquid-goo">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="32" result="blur" />
+                <feColorMatrix in="blur" mode="matrix" 
+                    values="1 0 0 0 0  
+                            0 1 0 0 0  
+                            0 0 1 0 0  
+                            0 0 0 28 -11" result="goo" />
+                <feBlend in="SourceGraphic" in2="goo" />
+            </filter>
+        </defs>
+    </svg>
+
+    <!-- 背景液態動畫畫布 -->
+    <div class="liquid-canvas">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3" id="dynamic-blob"></div>
+        <div class="blob cursor-blob" id="cursor-blob"></div>
+    </div>
+
+    <!-- 玻璃噪點質感層 -->
+    <div class="noise-overlay"></div>
+
+    <!-- 毛玻璃主體卡片 -->
+    <main class="glass-card" id="glass-card">
+        <div class="glass-glare"></div>
+
+        <header class="header">
+            <h1>LIQUID BMI</h1>
+            <p>流體毛玻璃健康指標分析</p>
+        </header>
+
+        <!-- 動態圓環儀表板 -->
+        <section class="gauge-section">
+            <svg class="gauge-svg" viewBox="0 0 200 200">
+                <circle class="gauge-track" cx="100" cy="100" r="85"></circle>
+                <circle class="gauge-fill" id="gauge-fill" cx="100" cy="100" r="85"></circle>
+            </svg>
+            <div class="bmi-display">
+                <div class="bmi-value" id="bmi-value">22.0</div>
+                <div class="bmi-badge" id="bmi-status">理想體態</div>
+            </div>
+        </section>
+
+        <!-- 互動滑桿控制 -->
+        <section class="controls">
+            <div class="control-box">
+                <div class="label-row">
+                    <span class="label-title">身高 Height</span>
+                    <span class="label-number"><span id="height-text">170</span><small>cm</small></span>
+                </div>
+                <input type="range" id="height-slider" min="120" max="220" value="170" step="0.5">
+            </div>
+
+            <div class="control-box">
+                <div class="label-row">
+                    <span class="label-title">體重 Weight</span>
+                    <span class="label-number"><span id="weight-text">63.5</span><small>kg</small></span>
+                </div>
+                <input type="range" id="weight-slider" min="30" max="160" value="63.5" step="0.5">
+            </div>
+        </section>
+
+        <!-- 建議體重區間 -->
+        <footer class="info-panel">
+            <span>建議理想體重範圍</span>
+            <span class="highlight" id="ideal-weight">53.5 - 69.4 kg</span>
+        </footer>
+    </main>
+
+    <script>
+        const heightSlider = document.getElementById('height-slider');
+        const weightSlider = document.getElementById('weight-slider');
+        const heightText = document.getElementById('height-text');
+        const weightText = document.getElementById('weight-text');
+        const bmiValueEl = document.getElementById('bmi-value');
+        const bmiStatusEl = document.getElementById('bmi-status');
+        const idealWeightEl = document.getElementById('ideal-weight');
+        const gaugeFill = document.getElementById('gauge-fill');
+        const glassCard = document.getElementById('glass-card');
+        const cursorBlob = document.getElementById('cursor-blob');
+        const rootStyle = document.documentElement.style;
+
+        // 台灣衛福部國健署成人 BMI 標準與對應主題色
+        const categories = [
+            { max: 18.5, label: '體重過輕', color: '#38bdf8' }, // 冰晶藍
+            { max: 24.0, label: '理想體態', color: '#10b981' }, // 翡翠綠
+            { max: 27.0, label: '體重過重', color: '#f59e0b' }, // 琥珀黃
+            { max: 30.0, label: '輕度肥胖', color: '#f97316' }, // 珊瑚橘
+            { max: 35.0, label: '中度肥胖', color: '#ef4444' }, // 緋紅
+            { max: Infinity, label: '重度肥胖', color: '#ec4899' } // 霓虹紫紅
+        ];
+
+        let displayedBMI = 22.0;
+        let targetBMI = 22.0;
+        let animFrameId = null;
+
+        // 數字平滑過渡動畫
+        function animateNumber() {
+            const diff = targetBMI - displayedBMI;
+            if (Math.abs(diff) > 0.05) {
+                displayedBMI += diff * 0.18;
+                bmiValueEl.textContent = displayedBMI.toFixed(1);
+                animFrameId = requestAnimationFrame(animateNumber);
+            } else {
+                displayedBMI = targetBMI;
+                bmiValueEl.textContent = targetBMI.toFixed(1);
+            }
+        }
+
+        // 更新滑桿軌道漸層
+        function updateSliderTrack(slider, color) {
+            const min = parseFloat(slider.min);
+            const max = parseFloat(slider.max);
+            const val = parseFloat(slider.value);
+            const percentage = ((val - min) / (max - min)) * 100;
+            slider.style.background = `linear-gradient(90deg, ${color} ${percentage}%, rgba(255, 255, 255, 0.12) ${percentage}%)`;
+        }
+
+        // 核心計算與視覺狀態更新
+        function updateBMI() {
+            const h = parseFloat(heightSlider.value);
+            const w = parseFloat(weightSlider.value);
+
+            heightText.textContent = h;
+            weightText.textContent = w;
+
+            const hMeters = h / 100;
+            targetBMI = w / (hMeters * hMeters);
+
+            // 計算理想體重範圍 (BMI 18.5 ~ 24)
+            const minWeight = (18.5 * hMeters * hMeters).toFixed(1);
+            const maxWeight = (24.0 * hMeters * hMeters).toFixed(1);
+            idealWeightEl.textContent = `${minWeight} - ${maxWeight} kg`;
+
+            // 判斷分類與主題色彩
+            const category = categories.find(c => targetBMI < c.max);
+            bmiStatusEl.textContent = category.label;
+            rootStyle.setProperty('--accent-color', category.color);
+
+            // 更新圓環進度條 (將 BMI 10~40 映射至圓周長 534)
+            const circumference = 534;
+            const normalized = Math.min(Math.max((targetBMI - 10) / 30, 0.04), 1);
+            gaugeFill.style.strokeDashoffset = circumference - (normalized * circumference);
+
+            // 更新兩條滑桿進度條顏色
+            updateSliderTrack(heightSlider, category.color);
+            updateSliderTrack(weightSlider, category.color);
+
+            cancelAnimationFrame(animFrameId);
+            animateNumber();
+        }
+
+        heightSlider.addEventListener('input', updateBMI);
+        weightSlider.addEventListener('input', updateBMI);
+
+        // ================= 3D 視差傾斜 & 液態游標追蹤 =================
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let blobX = mouseX;
+        let blobY = mouseY;
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+
+            // 計算卡片表面反光與 3D 傾斜角度
+            const rect = glassCard.getBoundingClientRect();
+            const cardX = e.clientX - rect.left;
+            const cardY = e.clientY - rect.top;
+
+            glassCard.style.setProperty('--mouse-x', `${cardX}px`);
+            glassCard.style.setProperty('--mouse-y', `${cardY}px`);
+
+            // 若滑鼠在卡片附近，觸發平滑 3D 視差傾斜
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const deltaX = (e.clientX - centerX) / 28;
+            const deltaY = (centerY - e.clientY) / 28;
+
+            const maxTilt = 10;
+            const rotateX = Math.max(Math.min(deltaY, maxTilt), -maxTilt);
+            const rotateY = Math.max(Math.min(deltaX, maxTilt), -maxTilt);
+
+            glassCard.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+
+        window.addEventListener('mouseleave', () => {
+            glassCard.style.transform = `rotateX(0deg) rotateY(0deg)`;
+        });
+
+        // 讓游標液態球具備物理慣性延遲跟隨
+        function renderCursorBlob() {
+            blobX += (mouseX - blobX) * 0.08;
+            blobY += (mouseY - blobY) * 0.08;
+            cursorBlob.style.transform = `translate(${blobX}px, ${blobY}px) translate(-50%, -50%)`;
+            requestAnimationFrame(renderCursorBlob);
+        }
+
+        // 初始化執行
+        updateBMI();
+        renderCursorBlob();
+    </script>
+</body>
+</html>
